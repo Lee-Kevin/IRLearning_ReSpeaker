@@ -9,9 +9,11 @@
 #define PIXELS_NUM      12
 #define PIXELS_SPACE    128
 
+IRLearning myir;
+uint8_t commandIndex;
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(PIXELS_NUM, PIXELS_PIN, NEO_GRB + NEO_KHZ800);
 int pixels_state = 0;
-
+//                                  0         1       2         3         4         5        6              7            8
 const char *pixels_patterns[] = {"sleep", "wakeup", "wait", "answer", "offline", "online","irlearning","stoplearning","control"};
 
 void touch_event(uint8_t id, uint8_t event) {
@@ -26,7 +28,6 @@ void spi_event(uint8_t addr, uint8_t *data, uint8_t len)
       break;
     }
   }
-  
 }
 
 void setup() {
@@ -43,6 +44,8 @@ void setup() {
   delay(1000);
   pixels.clear();
   pixels.show();
+  myir.init();
+  commandIndex = 0;
 
 //  pixels_state = 3;
 }
@@ -123,14 +126,25 @@ void loop() {
       }
     }
   } else if (pixels_state == 6) {
-    
-    
+      
+    while(!myir.IRCommandRec()) {
+        if (pixels_state == 7){
+            break;
+        }
+    }
+    if(++commandIndex == 20) {
+        commandIndex == 0;
+    }
+    pixels_state = -1;
   } else if (pixels_state == 7) {
-    sunny();
     pixels_state = -1;
   } else if (pixels_state == 8) {
-    cloudy();
-    pixels_state = -1;
+    if(commandIndex == 0) {
+        myir.IRCommandSend(commandIndex);
+    } else {
+        myir.IRCommandSend(commandIndex-1);
+    }
+    
   }
 }
 
